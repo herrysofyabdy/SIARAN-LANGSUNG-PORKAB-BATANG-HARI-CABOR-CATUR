@@ -101,6 +101,10 @@ body.vert .mlist{max-height:30vh}
 .sq.l.hl{background:var(--hl-l)}
 .sq.d.hl{background:var(--hl-d)}
 .sq.can,.sq.mv2,.sq.cap{cursor:pointer}
+.card.mine .board{touch-action:none}
+.sq.lift .pc{opacity:.25}
+.ghost{position:fixed;z-index:35;pointer-events:none;filter:drop-shadow(0 6px 8px #0008)}
+.ghost .pc{position:absolute;inset:0}
 .sq.chk::before{content:'';position:absolute;inset:0;background:radial-gradient(circle,#ff1f1f 0%,#e8262680 40%,transparent 72%)}
 .sq.mv2::after{content:'';position:absolute;left:50%;top:50%;width:30%;height:30%;transform:translate(-50%,-50%);border-radius:50%;background:#0b1b5540;z-index:3}
 .sq.cap::after{content:'';position:absolute;inset:4%;border-radius:50%;border:calc(var(--bs)*.009) solid #0b1b5545;z-index:3}
@@ -170,6 +174,21 @@ body.tayang .opbar{display:none}
 .camst{font:900 20px/1.25 Nunito,sans-serif;margin:10px 0 0;min-height:1.3em}
 .camst.ok{color:#7dffa1}
 .camst.bad{color:#ffb4ac}
+.dlg.cam.mini{inset:auto 8px 84px auto;background:none;padding:0;display:block;place-items:initial;width:min(46vw,280px)}
+.dlg.cam.mini .dbox{padding:6px;max-height:none;overflow:hidden}
+.dlg.cam.mini .camtools,.dlg.cam.mini .btns,.dlg.cam.mini .chk,.dlg.cam.mini .camhelp,.dlg.cam.mini #camClose{display:none}
+.dlg.cam.mini .dh{margin-bottom:4px}.dlg.cam.mini h2{font-size:13px}
+.dlg.cam.mini .camst{font-size:12px;margin-top:4px}
+.dlg.cam.mini #camMini{min-height:34px;font-size:12px;padding:2px 8px}
+.camtools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-weight:800;color:var(--mut)}
+.camtools .btn{min-width:48px;font-size:22px;padding:0 10px}
+.camtools b{min-width:3.2em;text-align:center;color:#fff;font-size:17px}
+.camtools .sep{margin-left:auto}
+.campins{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;font-weight:800;color:var(--mut)}
+.campins .btn{min-width:64px;font-size:15px}
+.campins .btn.on{background:#2fa84f;border-color:#7dffa1;color:#fff}
+.campins .btn.on::before{content:'';display:inline-block;width:9px;height:8px;margin-right:6px;border:2px solid #fff;border-top-width:5px;border-radius:2px 2px 1px 1px;vertical-align:-1px}
+.dlg.cam.mini .campins,.dlg.cam.mini .chk,.dlg.cam.mini #camAskRow{display:none!important}
 .camhelp{margin-top:12px;background:#06104a;border-radius:10px;padding:10px 14px}
 .camhelp summary{font-weight:900;cursor:pointer;min-height:32px}
 .camhelp ol{margin:8px 0 0;padding-left:20px}
@@ -360,8 +379,13 @@ body.tayang .opbar{display:none}
 </div>
 <div class="dlg cam" id="camDlg" data-noback="1" hidden>
   <div class="dbox" role="dialog" aria-label="Mode kamera">
-    <div class="dh"><h2 id="camTitle">Mode kamera</h2><button class="btn" id="camClose">Tutup kamera</button></div>
+    <div class="dh"><h2 id="camTitle">Mode kamera</h2><div class="cbtn" style="display:flex;gap:6px"><button class="btn" id="camMini">Kecilkan (input manual)</button><button class="btn" id="camClose">Tutup kamera</button></div></div>
     <div class="camwrap"><canvas id="camCv" width="640" height="360"></canvas></div>
+    <div class="camtools">
+      <span>Zoom gambar</span><button class="btn" id="camZout" aria-label="Perkecil gambar">−</button><b id="camZl">1.0×</b><button class="btn" id="camZin" aria-label="Perbesar gambar">+</button>
+      <span class="sep">Ukuran kotak</span><button class="btn" id="camGs" aria-label="Perkecil kotak">−</button><button class="btn" id="camGb" aria-label="Perbesar kotak">+</button>
+    </div>
+    <div class="campins" id="camPins"><span>Kunci sudut</span><button class="btn" data-pin="0">a8</button><button class="btn" data-pin="1">h8</button><button class="btn" data-pin="2">h1</button><button class="btn" data-pin="3">a1</button></div>
     <p class="camst" id="camSt" role="status">Menyalakan kamera…</p>
     <div class="btns two" id="camAskRow" hidden><button class="btn pri" id="camYes">Kirim langkah</button><button class="btn" id="camNo">Abaikan</button></div>
     <div class="btns two"><button class="btn pri" id="camLock">Kunci &amp; mulai baca</button><button class="btn" id="camRot">Putar arah papan</button></div>
@@ -370,10 +394,12 @@ body.tayang .opbar{display:none}
     <details class="camhelp" open><summary>Petunjuk kalibrasi</summary>
       <ol>
         <li>Pasang HP di stand/tripod <b>tepat di atas papan</b>, kamera menghadap ke bawah. Cahaya merata, tanpa silau.</li>
-        <li>Geser atau naik-turunkan HP sampai papan asli <b>pas dengan kotak kuning bermotif papan catur</b>. Petak gelap dan terang di layar harus menimpa petak yang sama di papan asli.</li>
-        <li>Bila belum pas, <b>tarik 4 titik kuning di sudut</b> sampai garis jatuh tepat di batas petak.</li>
+        <li>Kotak kuning bermotif papan catur langsung muncul. Atur <b>Zoom gambar</b> (tombol − / + atau cubit dua jari) sampai papan asli kira-kira sebesar kotak. Bila perlu, geser gambar dengan satu jari di luar kotak.</li>
+        <li>Seret <b>bagian tengah kotak</b> untuk memindahkannya dan pakai <b>Ukuran kotak − / +</b> sampai petak gelap-terang menimpa petak yang sama di papan asli.</li>
+        <li>Untuk penyesuaian halus, <b>tarik titik kuning di sudut</b> sampai garis jatuh tepat di batas petak. Sudut yang sudah ditarik <b>otomatis terkunci</b> (hijau bergembok) dan tidak ikut bergeser saat sudut lain, kotak, atau zoom diubah. Ketuk sudut atau tombol <b>Kunci sudut</b> untuk membuka/mengunci.</li>
         <li>Pastikan label <b>a1</b> berada di sudut kiri pemain putih. Kalau tidak, tekan <b>Putar arah papan</b>.</li>
         <li>Susun bidak sesuai papan di layar, lalu tekan <b>Kunci &amp; mulai baca</b>.</li>
+        <li>Perlu memasukkan langkah sendiri? Tekan <b>Kecilkan (input manual)</b>: kamera pindah ke pojok dan tetap membaca, sementara bidak bisa diketuk atau diseret langsung di papan.</li>
       </ol>
       <p>Setelah itu langkah terbaca otomatis sekitar setengah detik setelah tangan menjauh. Jika lawan langsung membalas, kedua langkah tetap terbaca sekaligus. Bila ada yang salah, tekan <b>Batal langkah</b>, kembalikan bidak, lalu tunggu acuan baru.</p>
     </details>
@@ -523,7 +549,7 @@ const call=(fn,...a)=>IN_GAS
     .then(r=>{if(r&&r.__err)throw new Error(r.__err);return r;});
 const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const p2=n=>String(n).padStart(2,'0');
-let ARCHURL='',ARCH=[],AG=null,QRON=null,CODE='',WHO=null,ST=null,VER=-1,OFF=0,CODES=[],pending=0,editing=0,TAY=false,VIEW='all',ACT=0,sel=null,promo=null,pollT=null;
+let DRG=null,DROPPED=0,ARCHURL='',ARCH=[],AG=null,QRON=null,CODE='',WHO=null,ST=null,VER=-1,OFF=0,CODES=[],pending=0,editing=0,TAY=false,VIEW='all',ACT=0,sel=null,promo=null,pollT=null;
 let D=[];const DK=[],LASTB=[],RS={};let LASTG='';
 try{CODE=localStorage.getItem(LS)||'';}catch(e){}
 try{VIEW=localStorage.getItem(LS+'v')||'all';}catch(e){}
@@ -561,20 +587,31 @@ function send(op){
   sendQ=p.catch(()=>{});
   return p;
 }
-let pollBusy=false,pollAgain=false;
+let inflight=0,lpErr=0,lpOff=0;
+/* Operator, pengelola, dan videotron: "menunggu di server" (long-poll) sehingga langkah baru
+   langsung diterima. Penonton lewat link: cek cepat setiap ±0,5 detik. */
+const useLong=()=>!document.hidden&&(!!WHO||BOOT.mode==='layar')&&Date.now()>lpOff;
+function gotState(r,t0){
+  $('#sync').classList.remove('bad');
+  if(r.err==='auth'){showLogin('Papan ini hanya bisa dilihat dengan kode akses.');return false;}
+  if(r.now){const t1=Date.now();OFF=r.now-(t0+t1)/2;}
+  if(r.state){if(pending||editing)return 'skip';applyState(r.state);}
+  return true;
+}
 function poll(){
   clearTimeout(pollT);
-  if(pollBusy){pollAgain=true;return;} /* hanya satu pengecekan berjalan pada satu waktu */
-  pollBusy=true;
-  const t0=Date.now();
-  call('getState',CODE,VER).then(r=>{
-    $('#sync').classList.remove('bad');
-    if(r.err==='auth'){showLogin('Papan ini hanya bisa dilihat dengan kode akses.');return;}
-    if(r.now){const t1=Date.now();OFF=r.now-(t0+t1)/2;}
-    if(r.state&&!pending&&!editing)applyState(r.state);
-  }).catch(()=>{$('#sync').classList.add('bad');}).finally(()=>{
-    pollBusy=false;const d=pollAgain?0:document.hidden?5000:(WHO?550:750)+Math.random()*150;pollAgain=false;
-    pollT=setTimeout(poll,d);});
+  if(useLong()){
+    if(inflight>0)return;
+    inflight++;const t0=Date.now();let next=20;
+    call('getState',CODE,VER,6000).then(r=>{lpErr=0;if(gotState(r,t0)==='skip')next=200;})
+      .catch(()=>{$('#sync').classList.add('bad');lpErr++;next=1000;if(lpErr>=3){lpOff=Date.now()+30000;lpErr=0;}})
+      .finally(()=>{inflight--;clearTimeout(pollT);pollT=setTimeout(poll,next);});
+    return;
+  }
+  pollT=setTimeout(poll,document.hidden?5000:500);
+  if(inflight>=2)return;
+  inflight++;const t0=Date.now();
+  call('getState',CODE,VER,0).then(r=>gotState(r,t0)).catch(()=>{$('#sync').classList.add('bad');}).finally(()=>{inflight--;});
 }
 
 /* ---------- jam ---------- */
@@ -682,7 +719,7 @@ function fitText(root){
 function visible(){if(VIEW!=='all'&&+VIEW<ST.n)return[+VIEW];const a=[];for(let k=0;k<ST.n;k++)a.push(k);return a;}
 function renderCard(k){
   const el=document.querySelector(`.card[data-k="${k}"]`);if(!el)return;
-  el.innerHTML=cardHTML(k);el.classList.toggle('act',k===ACT);
+  el.innerHTML=cardHTML(k);el.classList.toggle('act',k===ACT);el.classList.toggle('mine',!!WHO&&can(k)&&!TAY);
   const ml=el.querySelector('.mlist');ml.scrollTop=ml.scrollHeight;fitText(el);LASTB[k]=JSON.stringify(B(k));
 }
 function renderAll(){
@@ -880,7 +917,7 @@ function bind(){
   $('#saveG').onclick=()=>{if(!B(ACT).mv.length){toast('Belum ada langkah untuk disimpan.');return;}send({t:'save',k:ACT,save:makeSave(ACT)});};
   $('#fQr').onchange=e=>send({t:'qr',v:e.target.checked});
   $('#stage').addEventListener('click',e=>{
-    if(TAY||!WHO)return;
+    if(TAY||!WHO||Date.now()-DROPPED<350)return;
     const card=e.target.closest('.card');if(!card)return;
     const k=+card.dataset.k,bd=B(k);if(!can(k))return;setActive(k);
     if(promo&&promo.k===k){const b=e.target.closest('[data-q]');const ms=promo.ms;promo=null;if(b)makeMove(k,ms.find(m=>m.promo===b.dataset.q));else{sel=null;renderCard(k);}return;}
@@ -891,6 +928,29 @@ function bind(){
     if(prevK!=null&&prevK!==k)renderCard(prevK);
     renderCard(k);
   });
+  /* seret & lepas bidak (selain ketuk-ketuk) */
+  $('#stage').addEventListener('pointerdown',e=>{
+    if(TAY||!WHO||promo)return;const sqEl=e.target.closest('.sq'),card=e.target.closest('.card');if(!sqEl||!card)return;
+    const k=+card.dataset.k;if(!can(k)||B(k).result)return;const i=+sqEl.dataset.i,s=cur(k);
+    if(!s.b[i]||colorOf(s.b[i])!==s.turn)return;
+    DRG={k,i,x:e.clientX,y:e.clientY,pid:e.pointerId,moved:false,size:sqEl.getBoundingClientRect().width,el:null};
+  });
+  addEventListener('pointermove',e=>{
+    if(!DRG||e.pointerId!==DRG.pid)return;
+    if(!DRG.moved){if(Math.hypot(e.clientX-DRG.x,e.clientY-DRG.y)<6)return;DRG.moved=true;setActive(DRG.k);sel={k:DRG.k,i:DRG.i};renderCard(DRG.k);
+      const q=document.querySelector(`.card[data-k="${DRG.k}"] .sq[data-i="${DRG.i}"]`);if(q)q.classList.add('lift');
+      const g=document.createElement('div');g.className='ghost';const z=DRG.size*1.2;g.style.width=g.style.height=z+'px';g.innerHTML=pieceSVG(cur(DRG.k).b[DRG.i]);document.body.appendChild(g);DRG.el=g;}
+    const z=DRG.size*1.2;DRG.el.style.left=(e.clientX-z/2)+'px';DRG.el.style.top=(e.clientY-z*.75)+'px';
+  });
+  const dropEnd=e=>{
+    if(!DRG||e.pointerId!==DRG.pid)return;const d=DRG;DRG=null;if(!d.moved)return;
+    if(d.el)d.el.remove();DROPPED=Date.now();
+    const z=d.size*1.2,ex=e.clientX,ey=e.clientY-z*.25,t=document.elementFromPoint(ex,ey),q=t&&t.closest('.sq'),card=t&&t.closest('.card');
+    if(e.type==='pointerup'&&q&&card&&+card.dataset.k===d.k){const to=+q.dataset.i,ms=legal(cur(d.k)).filter(m=>m.from===d.i&&m.to===to);
+      if(ms.length){if(ms.length>1){promo={k:d.k,ms};renderCard(d.k);}else makeMove(d.k,ms[0]);return;}}
+    sel=null;renderCard(d.k);
+  };
+  addEventListener('pointerup',dropEnd);addEventListener('pointercancel',dropEnd);
   $('#gear').onclick=()=>{if(!WHO&&!$('#panel').classList.contains('open')){togglePanel(true);return;}togglePanel();};
   $('#pclose').onclick=()=>togglePanel(false);
   $('#fView').onchange=e=>{VIEW=e.target.value;try{localStorage.setItem(LS+'v',VIEW);}catch(x){}renderAll();};
@@ -1035,7 +1095,7 @@ function renderGame(){
 }
 
 /* ---------- mode kamera: baca langkah dari kamera di atas papan ---------- */
-const CAM={on:false,k:0,stream:null,timer:null,video:null,W:640,Hp:360,pts:null,H:null,locked:false,idx:null,prev:null,base:null,still:0,known:'',pend:null,changed:[],flash:null,lock:null,drag:-1};
+const CAM={pin:[false,false,false,false],zoom:1,cx:.5,cy:.5,on:false,k:0,stream:null,timer:null,video:null,W:640,Hp:360,pts:null,H:null,locked:false,idx:null,prev:null,base:null,still:0,known:'',pend:null,changed:[],flash:null,lock:null,drag:-1};
 const CAM_LBL=['a8','h8','h1','a1'];
 function camSolve(A,b){const n=b.length,M=A.map((r,i)=>r.concat([b[i]]));
   for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;const t=M[c];M[c]=M[p];M[p]=t;
@@ -1045,6 +1105,19 @@ function camHomo(dst){const src=[[0,0],[8,0],[8,8],[0,8]],A=[],b=[];
   for(let i=0;i<4;i++){const[x,y]=src[i],[u,v]=dst[i];A.push([x,y,1,0,0,0,-u*x,-u*y]);b.push(u);A.push([0,0,0,x,y,1,-v*x,-v*y]);b.push(v);}
   const h=camSolve(A,b);return[h[0],h[1],h[2],h[3],h[4],h[5],h[6],h[7],1];}
 const camMap=(H,x,y)=>{const w=H[6]*x+H[7]*y+H[8];return[(H[0]*x+H[1]*y+H[2])/w,(H[3]*x+H[4]*y+H[5])/w];};
+function camCrop(){const v=CAM.video,vw=(v&&v.videoWidth)||CAM.W,vh=(v&&v.videoHeight)||CAM.Hp,sw=vw/CAM.zoom,sh=vh/CAM.zoom;
+  return{vw,vh,sw,sh,sx:Math.min(vw-sw,Math.max(0,CAM.cx*vw-sw/2)),sy:Math.min(vh-sh,Math.max(0,CAM.cy*vh-sh/2))};}
+/* ubah zoom/geser gambar. Sebelum dikunci kotak tetap di layar (gambar yang disesuaikan);
+   sesudah dikunci titik kalibrasi ikut berpindah agar tetap menempel di papan */
+function camView(zoom,cx,cy){
+  const o=camCrop(),vp=CAM.pts?CAM.pts.map(p=>[o.sx+p[0]*o.sw/CAM.W,o.sy+p[1]*o.sh/CAM.Hp]):null;
+  CAM.zoom=Math.max(1,Math.min(4,zoom));const n0=camCrop();
+  CAM.cx=Math.max(n0.sw/2/n0.vw,Math.min(1-n0.sw/2/n0.vw,cx));CAM.cy=Math.max(n0.sh/2/n0.vh,Math.min(1-n0.sh/2/n0.vh,cy));
+  const n=camCrop();$('#camZl').textContent=CAM.zoom.toFixed(1)+'×';
+  if(vp)camSetPts(vp.map((v,i)=>(CAM.locked||CAM.pin[i])?[(v[0]-n.sx)*CAM.W/n.sw,(v[1]-n.sy)*CAM.Hp/n.sh]:CAM.pts[i]),CAM.locked);
+}
+function camScaleGrid(f){if(!CAM.pts)return;if(CAM.pin.every(Boolean)){camStatus('Semua sudut terkunci. Ketuk sudut untuk membukanya dulu.');return;}const c=CAM.pts.reduce((a,p)=>[a[0]+p[0]/4,a[1]+p[1]/4],[0,0]);camSetPts(CAM.pts.map((p,i)=>CAM.pin[i]?p:[c[0]+(p[0]-c[0])*f,c[1]+(p[1]-c[1])*f]),CAM.locked);if(CAM.locked)camStatus('Kotak diubah. Mengambil acuan baru…');}
+function camInside(x,y){const P=CAM.pts;let ins=false;for(let i=0,j=3;i<4;j=i++){const[xi,yi]=P[i],[xj,yj]=P[j];if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)ins=!ins;}return ins;}
 function camGuidePts(){const sz=Math.min(CAM.W,CAM.Hp)*.86,cx=CAM.W/2,cy=CAM.Hp/2,h=sz/2;return[[cx-h,cy-h],[cx+h,cy-h],[cx+h,cy+h],[cx-h,cy+h]];}
 function camSetPts(pts,save){
   CAM.pts=pts.map(p=>[p[0],p[1]]);CAM.H=camHomo(CAM.pts);
@@ -1052,26 +1125,33 @@ function camSetPts(pts,save){
   for(let i=0;i<64;i++){const r=i>>3,c=i&7;for(let sy=0;sy<5;sy++)for(let sx=0;sx<5;sx++){
     let[x,y]=camMap(CAM.H,c+.25+.125*sx,r+.25+.125*sy);x=Math.min(W-1,Math.max(0,Math.round(x)));y=Math.min(CAM.Hp-1,Math.max(0,Math.round(y)));idx[j++]=(y*W+x)*4;}}
   CAM.idx=idx;CAM.base=null;CAM.prev=null;CAM.still=0;CAM.changed=[];
-  if(save)try{localStorage.setItem('caturCam'+CAM.k,JSON.stringify({pts:CAM.pts,W:CAM.W,H:CAM.Hp}));}catch(e){}
+  if(save)try{localStorage.setItem('caturCam'+CAM.k,JSON.stringify({pts:CAM.pts,W:CAM.W,H:CAM.Hp,zoom:CAM.zoom,cx:CAM.cx,cy:CAM.cy}));}catch(e){}
 }
+function camPins(){document.querySelectorAll('#camPins [data-pin]').forEach(b=>{const on=CAM.pin[+b.dataset.pin];b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');b.title=on?'Terkunci: ketuk untuk membuka':'Bebas: ketuk untuk mengunci';});}
+function camTogglePin(i){CAM.pin[i]=!CAM.pin[i];camPins();camStatus(CAM.pin[i]?'Sudut '+CAM_LBL[i]+' dikunci, tidak akan ikut bergeser.':'Sudut '+CAM_LBL[i]+' dibuka, bisa digeser lagi.');}
 function camStatus(t,cls){const el=$('#camSt');el.textContent=t;el.className='camst'+(cls?' '+cls:'');}
 function camButtons(){$('#camLock').textContent=CAM.locked?'Terkunci · sedang membaca':'Kunci & mulai baca';$('#camLock').classList.toggle('pri',!CAM.locked);}
 function camOpen(){
   const k=ACT;if(!can(k)){toast('Pilih meja Anda dulu.');return;}
-  CAM.k=k;togglePanel(false);$('#camDlg').hidden=false;$('#camTitle').textContent='Kamera · '+B(k).label;$('#camAskRow').hidden=true;CAM.pend=null;
+  CAM.k=k;togglePanel(false);$('#camDlg').classList.remove('mini');$('#camDlg').hidden=false;$('#camTitle').textContent='Kamera · '+B(k).label;$('#camAskRow').hidden=true;CAM.pend=null;
   try{$('#camAsk').checked=localStorage.getItem('caturCamAsk')==='1';}catch(e){}
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){camStatus('Kamera tidak tersedia di halaman ini. Buka aplikasi lewat link GitHub (https) di browser HP.','bad');return;}
   camStatus('Menyalakan kamera…');
-  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30}},audio:false}).then(st=>{
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30}},audio:false}).then(st=>{
     CAM.stream=st;const v=CAM.video||(CAM.video=document.createElement('video'));v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.srcObject=st;
     v.onloadedmetadata=()=>{v.play().catch(()=>{});CAM.W=640;CAM.Hp=Math.round(640*(v.videoHeight||360)/(v.videoWidth||640));const cv=$('#camCv');cv.width=CAM.W;cv.height=CAM.Hp;
       let saved=null;try{saved=JSON.parse(localStorage.getItem('caturCam'+k)||'null');}catch(e){}
-      if(saved&&saved.W===CAM.W&&saved.H===CAM.Hp){camSetPts(saved.pts,false);CAM.locked=true;camStatus('Kalibrasi tersimpan dipakai. Bila garis tidak pas, tarik titik sudut kuning.');}
+      CAM.zoom=1;CAM.cx=.5;CAM.cy=.5;$('#camZl').textContent='1.0×';
+      CAM.pin=[false,false,false,false];
+      if(saved&&saved.W===CAM.W&&saved.H===CAM.Hp){CAM.pin=[true,true,true,true];CAM.zoom=saved.zoom||1;CAM.cx=saved.cx||.5;CAM.cy=saved.cy||.5;$('#camZl').textContent=CAM.zoom.toFixed(1)+'×';camSetPts(saved.pts,false);CAM.locked=true;camStatus('Kalibrasi tersimpan dipakai. Bila garis tidak pas, tarik titik sudut kuning.');}
       else{camSetPts(camGuidePts(),false);CAM.locked=false;camStatus('Geser HP sampai papan pas dengan kotak kuning, lalu tekan "Kunci & mulai baca".');}
-      camButtons();CAM.on=true;CAM.known=B(k).mv.join(' ');clearInterval(CAM.timer);CAM.timer=setInterval(camTick,110);};
+      camPins();camButtons();CAM.on=true;CAM.known=B(k).mv.join(' ');clearInterval(CAM.timer);CAM.timer=setInterval(camTick,110);};
     try{navigator.wakeLock&&navigator.wakeLock.request('screen').then(l=>{CAM.lock=l;}).catch(()=>{});}catch(e){}
   }).catch(err=>{camStatus(err&&err.name==='NotAllowedError'?'Izin kamera ditolak. Izinkan kamera untuk situs ini di pengaturan browser, lalu coba lagi.':'Kamera tidak bisa dibuka: '+(err&&err.message||err),'bad');});
 }
+/* kecilkan kamera ke pojok: kamera tetap membaca, papan bisa digerakkan manual */
+function camMini(on){const d=$('#camDlg');d.classList.toggle('mini',on);$('#camMini').textContent=on?'Besarkan kamera':'Kecilkan (input manual)';
+  if(on)toast('Kamera tetap membaca. Langkah juga bisa diketuk atau diseret langsung di papan.');}
 function camClose(){
   CAM.on=false;clearInterval(CAM.timer);CAM.timer=null;
   if(CAM.stream)CAM.stream.getTracks().forEach(t=>t.stop());CAM.stream=null;
@@ -1081,20 +1161,21 @@ function camClose(){
 function camTick(){
   if(!CAM.on||!CAM.video||CAM.video.readyState<2)return;
   const cv=$('#camCv'),ctx=cv.getContext('2d',{willReadFrequently:true}),W=CAM.W,Hp=CAM.Hp;
-  ctx.drawImage(CAM.video,0,0,W,Hp);
-  if(CAM.locked&&CAM.idx&&CAM.drag<0){
+  const cr=camCrop();ctx.drawImage(CAM.video,cr.sx,cr.sy,cr.sw,cr.sh,0,0,W,Hp);
+  if(CAM.locked&&CAM.idx&&CAM.drag<0&&!CAM.gest){
     const d=ctx.getImageData(0,0,W,Hp).data,n=CAM.idx.length,f=new Float32Array(n*3);let sum=0;
     for(let i=0;i<n;i++){const p=CAM.idx[i];f[i*3]=d[p];f[i*3+1]=d[p+1];f[i*3+2]=d[p+2];sum+=d[p]+d[p+1]+d[p+2];}
     const mean=sum/(n*3);for(let i=0;i<f.length;i++)f[i]-=mean;
     let mot=99;if(CAM.prev){mot=0;for(let i=0;i<f.length;i++)mot+=Math.abs(f[i]-CAM.prev[i]);mot/=f.length;}
     CAM.prev=f;
     if(mot>4.5){if(CAM.still>=3)camStatus('Ada gerakan… langkah dibaca begitu tangan menjauh');CAM.still=0;}
-    else{CAM.still++;if(CAM.still===3)camStable(f);}
+    else{CAM.still++;if(CAM.still===3)camStable(f,false);else if(CAM.still===14&&CAM.unm)camStable(f,true);}
   }
   camDraw(ctx);
 }
 const camDiff=(a,b)=>{const o=[];for(let i=0;i<64;i++)if(a[i]!==b[i])o.push(i);return o;};
-function camStable(f){
+function camStable(f,final){
+  CAM.unm=false;
   const k=CAM.k,bd=B(k);
   if(bd.result){camStatus('Partai sudah selesai.');return;}
   const now=bd.mv.join(' ');
@@ -1114,6 +1195,7 @@ function camStable(f){
     for(const m of L){const s1=apply(s0,m),L2=legal(s1);
       for(const m2 of L2){const E=camDiff(s0.b,apply(s1,m2).b);if(fits(E)){const sc=score(E,[m,m2]);if(sc>bs){bs=sc;best=[m,m2];}}}}
   }
+  if(!best&&!final){CAM.unm=true;camStatus('Membaca…');return;}
   if(!best){camStatus('Langkah tidak terbaca ('+ch.map(sqName).join(', ')+'). Rapikan bidak ke tengah petak, atau masukkan manual lalu tekan "Atur ulang acuan".','bad');return;}
   if($('#camAsk').checked){CAM.pend={seq:best,f};$('#camAskRow').hidden=false;camStatus('Terbaca: '+camNames(best)+'. Kirim?');return;}
   camAccept(best,f);
@@ -1138,25 +1220,56 @@ function camDraw(ctx){
   if(CAM.flash&&Date.now()-CAM.flash.t<900){ctx.fillStyle='rgba(80,255,140,.45)';CAM.flash.sq.forEach(s=>{camQuad(ctx,H,s>>3,s&7);ctx.fill();});}
   ctx.font='bold 17px Nunito,sans-serif';ctx.lineWidth=3;
   CAM.pts.forEach((p,i)=>{
-    ctx.beginPath();ctx.arc(p[0],p[1],CAM.locked?6:10,0,7);ctx.fillStyle='#ffd84d';ctx.fill();ctx.strokeStyle='#081a63';ctx.stroke();
+    const pn=CAM.pin[i];ctx.beginPath();ctx.arc(p[0],p[1],pn?9:11,0,7);ctx.fillStyle=pn?'#2fa84f':'#ffd84d';ctx.fill();ctx.strokeStyle='#081a63';ctx.stroke();
+    if(pn){ctx.save();ctx.strokeStyle='#fff';ctx.fillStyle='#fff';ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(p[0],p[1]-2,2.6,Math.PI,0);ctx.stroke();ctx.fillRect(p[0]-3.6,p[1]-1.5,7.2,5.2);ctx.restore();ctx.lineWidth=3;}
     const t=CAM_LBL[i]+(i===3?' (kiri putih)':''),tx=p[0]+(i===1||i===2?-12-ctx.measureText(t).width:12),ty=p[1]+(i<2?22:-12);
     ctx.strokeText(t,tx,ty);ctx.fillStyle=i===3?'#7dffa1':'#ffd84d';ctx.fillText(t,tx,ty);});
 }
 function camPt(e){const cv=$('#camCv'),r=cv.getBoundingClientRect();return[(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height,cv.width/r.width];}
 function camBind(){
-  $('#camOpen').onclick=camOpen;$('#obCam').onclick=camOpen;$('#camClose').onclick=camClose;
-  const cv=$('#camCv');
+  $('#camOpen').onclick=camOpen;$('#obCam').onclick=()=>{if(CAM.on){camMini(false);return;}camOpen();};$('#camClose').onclick=()=>{camMini(false);camClose();};
+  $('#camMini').onclick=()=>camMini(!$('#camDlg').classList.contains('mini'));
+  const cv=$('#camCv'),P=new Map();let pinch=null,gmove=null,pan=null;
+  const dist=()=>{const a=[...P.values()];return Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);};
   cv.addEventListener('pointerdown',e=>{
-    if(!CAM.on||!CAM.pts)return;const[x,y,sc]=camPt(e);let bi=-1,bd=40*sc;
+    if(!CAM.on||!CAM.pts)return;e.preventDefault();try{cv.setPointerCapture(e.pointerId);}catch(x){}
+    P.set(e.pointerId,[e.clientX,e.clientY]);
+    if(P.size===2){CAM.drag=-1;gmove=null;pan=null;pinch={d0:dist(),z0:CAM.zoom};CAM.gest=true;return;}
+    const[x,y,sc]=camPt(e);let bi=-1,bd=40*sc;
     CAM.pts.forEach((p,i)=>{const d=Math.hypot(p[0]-x,p[1]-y);if(d<bd){bd=d;bi=i;}});
-    if(bi>=0){CAM.drag=bi;try{cv.setPointerCapture(e.pointerId);}catch(x){}e.preventDefault();}
+    if(bi>=0){CAM.ctap={i:bi,X:e.clientX,Y:e.clientY,moved:false};if(!CAM.pin[bi])CAM.drag=bi;CAM.gest=true;return;}
+    if(!CAM.locked&&camInside(x,y)&&!CAM.pin.every(Boolean)){gmove={x,y,p0:CAM.pts.map(p=>p.slice())};CAM.gest=true;return;}
+    if(CAM.zoom>1){pan={X:e.clientX,Y:e.clientY,cx:CAM.cx,cy:CAM.cy};CAM.gest=true;}
   });
-  cv.addEventListener('pointermove',e=>{if(CAM.drag<0)return;const[x,y]=camPt(e);CAM.pts[CAM.drag]=[Math.max(0,Math.min(CAM.W,x)),Math.max(0,Math.min(CAM.Hp,y))];CAM.H=camHomo(CAM.pts);});
-  const end=()=>{if(CAM.drag<0)return;CAM.drag=-1;camSetPts(CAM.pts,CAM.locked);if(CAM.locked)camStatus('Kalibrasi diperbarui. Mengambil acuan baru…');};
+  cv.addEventListener('pointermove',e=>{
+    if(!P.has(e.pointerId))return;P.set(e.pointerId,[e.clientX,e.clientY]);
+    if(pinch&&P.size===2){const z=pinch.z0*dist()/(pinch.d0||1);if(Math.abs(z-CAM.zoom)>.03)camView(z,CAM.cx,CAM.cy);return;}
+    if(CAM.ctap&&!CAM.ctap.moved&&Math.hypot(e.clientX-CAM.ctap.X,e.clientY-CAM.ctap.Y)>6)CAM.ctap.moved=true;
+    if(CAM.drag>=0&&CAM.ctap&&CAM.ctap.moved){const[x,y]=camPt(e);CAM.pts[CAM.drag]=[Math.max(0,Math.min(CAM.W,x)),Math.max(0,Math.min(CAM.Hp,y))];CAM.H=camHomo(CAM.pts);return;}
+    if(gmove){const[x,y]=camPt(e);CAM.pts=gmove.p0.map((p,i)=>CAM.pin[i]?p:[p[0]+x-gmove.x,p[1]+y-gmove.y]);CAM.H=camHomo(CAM.pts);return;}
+    if(pan){const r=cv.getBoundingClientRect(),c=camCrop();camView(CAM.zoom,pan.cx-(e.clientX-pan.X)*c.sw/r.width/c.vw,pan.cy-(e.clientY-pan.Y)*c.sh/r.height/c.vh);}
+  });
+  const end=e=>{
+    P.delete(e.pointerId);
+    if(pinch){if(P.size<2){pinch=null;if(!P.size)CAM.gest=false;}return;}
+    if(CAM.ctap){const t=CAM.ctap;CAM.ctap=null;
+      if(!t.moved){CAM.drag=-1;camTogglePin(t.i);}
+      else if(CAM.drag>=0){const i=CAM.drag;CAM.drag=-1;CAM.pin[i]=true;camPins();camSetPts(CAM.pts,CAM.locked);camStatus('Sudut '+CAM_LBL[i]+' sudah disesuaikan dan dikunci. Ketuk sudut itu bila ingin menggeser lagi.');}
+      else{CAM.drag=-1;camStatus('Sudut '+CAM_LBL[t.i]+' terkunci. Ketuk sekali untuk membukanya.');}}
+    if(gmove){gmove=null;camSetPts(CAM.pts,CAM.locked);if(CAM.locked)camStatus('Kalibrasi diperbarui. Mengambil acuan baru…');}
+    if(pan){pan=null;if(CAM.locked)camSetPts(CAM.pts,true);}
+    if(!P.size)CAM.gest=false;
+  };
   cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
-  $('#camLock').onclick=()=>{if(!CAM.on||CAM.locked)return;CAM.locked=true;camSetPts(CAM.pts,true);camButtons();camStatus('Terkunci. Jauhkan tangan dari papan untuk mengambil acuan…');};
-  $('#camRot').onclick=()=>{if(!CAM.pts)return;const p=CAM.pts;camSetPts([p[3],p[0],p[1],p[2]],CAM.locked);camStatus('Arah diputar. Pastikan label a1 ada di sudut kiri pemain putih.');};
-  $('#camGuide').onclick=()=>{if(!CAM.on)return;CAM.locked=false;camSetPts(camGuidePts(),false);try{localStorage.removeItem('caturCam'+CAM.k);}catch(e){}camButtons();camStatus('Geser HP sampai papan pas dengan kotak kuning, lalu tekan "Kunci & mulai baca".');};
+  cv.addEventListener('wheel',e=>{if(!CAM.on)return;e.preventDefault();camView(CAM.zoom*(e.deltaY<0?1.1:1/1.1),CAM.cx,CAM.cy);},{passive:false});
+  $('#camZin').onclick=()=>camView(CAM.zoom*1.2,CAM.cx,CAM.cy);
+  $('#camZout').onclick=()=>camView(CAM.zoom/1.2,CAM.cx,CAM.cy);
+  $('#camGb').onclick=()=>camScaleGrid(1.05);
+  $('#camPins').addEventListener('click',e=>{const b=e.target.closest('[data-pin]');if(b&&CAM.pts)camTogglePin(+b.dataset.pin);});
+  $('#camGs').onclick=()=>camScaleGrid(1/1.05);
+  $('#camLock').onclick=()=>{if(!CAM.on||CAM.locked)return;CAM.locked=true;CAM.pin=[true,true,true,true];camPins();camSetPts(CAM.pts,true);camButtons();camStatus('Terkunci. Jauhkan tangan dari papan untuk mengambil acuan…');};
+  $('#camRot').onclick=()=>{if(!CAM.pts)return;const p=CAM.pts,q=CAM.pin;CAM.pin=[q[3],q[0],q[1],q[2]];camPins();camSetPts([p[3],p[0],p[1],p[2]],CAM.locked);camStatus('Arah diputar. Pastikan label a1 ada di sudut kiri pemain putih.');};
+  $('#camGuide').onclick=()=>{if(!CAM.on)return;CAM.locked=false;CAM.pin=[false,false,false,false];camPins();CAM.zoom=1;CAM.cx=.5;CAM.cy=.5;$('#camZl').textContent='1.0×';camSetPts(camGuidePts(),false);try{localStorage.removeItem('caturCam'+CAM.k);}catch(e){}camButtons();camStatus('Geser HP sampai papan pas dengan kotak kuning, lalu tekan "Kunci & mulai baca".');};
   $('#camSync').onclick=()=>{CAM.base=null;CAM.still=0;CAM.pend=null;$('#camAskRow').hidden=true;camStatus('Mengambil acuan baru… jauhkan tangan dari papan.');};
   $('#camUndo').onclick=()=>{if(ACT!==CAM.k)setActive(CAM.k);$('#undo').click();CAM.base=null;CAM.still=0;camStatus('Langkah dibatalkan. Kembalikan bidak di papan asli, lalu tunggu acuan baru.');};
   $('#camYes').onclick=()=>{if(CAM.pend)camAccept(CAM.pend.seq,CAM.pend.f);};
