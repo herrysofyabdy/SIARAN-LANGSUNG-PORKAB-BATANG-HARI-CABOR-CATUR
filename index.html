@@ -46,7 +46,12 @@ body.vert .stage{flex:none;align-content:start}
 .dh h2{font:900 22px/1.15 Nunito,sans-serif;margin:0}
 .sqr{width:200px;height:200px;margin:12px auto;background:#fff;padding:8px;border-radius:10px}
 .alist{list-style:none;margin:8px 0 0;padding:0}
-.alist li{border-bottom:1px solid #2c46a8}
+.alist li{border-bottom:1px solid #2c46a8;display:flex;align-items:center;gap:8px}
+.alist li input{width:22px;height:22px;flex:none;accent-color:var(--acc);margin-left:4px}
+.alist li button{flex:1}
+.aadm{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 8px;padding:8px 10px;background:#06104a;border-radius:10px}
+.aadm .chk{margin:0!important;min-height:40px;flex:1 1 auto}
+.aadm .btn{flex:1 1 140px}
 .alist button{width:100%;text-align:left;background:none;border:0;color:var(--ink);padding:10px 4px;cursor:pointer;min-height:44px}
 .alist button:hover{background:#ffffff10}
 .alist b{display:block;font-size:16px}
@@ -365,6 +370,11 @@ body.tayang .opbar{display:none}
 <div class="dlg" id="archDlg" hidden>
   <div class="dbox" role="dialog" aria-label="Arsip notasi">
     <div class="dh"><h2 id="archTitle">Arsip notasi</h2><button class="btn" data-close>Tutup</button></div>
+    <div class="aadm" id="archAdm" hidden>
+      <label class="chk"><input type="checkbox" id="aAll"> Pilih semua</label>
+      <button class="btn warn" id="aDelSel">Hapus terpilih</button>
+      <button class="btn warn" id="aDelAll">Hapus semua arsip</button>
+    </div>
     <div id="archList"></div>
     <div id="archView" hidden>
       <button class="btn" id="archBack">Kembali ke daftar</button>
@@ -373,6 +383,7 @@ body.tayang .opbar{display:none}
       <div class="anav"><button class="btn" data-an="first">Awal</button><button class="btn" data-an="prev">‹ Mundur</button><button class="btn" data-an="next">Maju ›</button><button class="btn" data-an="last">Akhir</button></div>
       <div class="asan" id="aSan"></div>
       <div class="btns two"><button class="btn" id="aCopy">Salin PGN</button><button class="btn" id="aCopyAll">Salin semua PGN</button></div>
+      <button class="btn wide warn" id="aDelOne" hidden>Hapus partai ini dari arsip</button>
       <p class="note" id="aNote"></p>
     </div>
   </div>
@@ -909,6 +920,11 @@ function bind(){
   $('#shCopy').onclick=()=>copyText(TONTON(),$('#shNote'));
   $('#shNative').onclick=()=>{try{navigator.share({title:(ST&&ST.ev)||'Papan Catur Live',text:'Tonton langsung',url:TONTON()}).catch(()=>{});}catch(e){}};
   $('#archList').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b)openGame(+b.dataset.a);});
+  $('#aAll').onchange=e=>document.querySelectorAll('#archList [data-sel]').forEach(c=>{c.checked=e.target.checked;});
+  $('#aDelSel').onclick=e=>{const ids=Array.from(document.querySelectorAll('#archList [data-sel]:checked')).map(c=>c.dataset.sel);
+    if(!ids.length){toast('Centang dulu partai yang mau dihapus.');return;}armTap(e.currentTarget,'Hapus terpilih',()=>archDel({ids}));};
+  $('#aDelAll').onclick=e=>armTap(e.currentTarget,'Hapus semua arsip',()=>archDel({all:true}));
+  $('#aDelOne').onclick=e=>{if(!AG)return;const id=String(AG.g.id);armTap(e.currentTarget,'Hapus partai ini dari arsip',()=>archDel({ids:[id]}));};
   $('#archBack').onclick=()=>{$('#archView').hidden=true;$('#archList').hidden=false;};
   document.querySelector('.anav').addEventListener('click',e=>{const b=e.target.closest('[data-an]');if(!b||!AG)return;const L=AG.d.POS.length-1,a=b.dataset.an;AG.idx=a==='first'?0:a==='last'?L:a==='prev'?Math.max(0,AG.idx-1):Math.min(L,AG.idx+1);renderGame();});
   $('#aSan').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(b&&AG){AG.idx=+b.dataset.p;renderGame();}});
@@ -1067,18 +1083,37 @@ function fmtDate(v){const d=new Date(v);return isNaN(d)?String(v||''):d.toLocale
 function openArch(){
   togglePanel(false);$('#archDlg').hidden=false;$('#archView').hidden=true;$('#archList').hidden=false;
   $('#archList').innerHTML='<p class="note">Memuat arsip…</p>';
-  call('getArchive',CODE).then(r=>{
-    if(r.err){$('#archList').innerHTML='<p class="note">Arsip hanya bisa dilihat dengan kode akses.</p>';return;}
+  loadArch();
+}
+const isAdmin=()=>!!(WHO&&WHO.role==='admin');
+function loadArch(){
+  return call('getArchive',CODE).then(r=>{
+    if(r.err){$('#archAdm').hidden=true;$('#archList').innerHTML='<p class="note">Arsip hanya bisa dilihat dengan kode akses.</p>';return;}
     ARCH=r.list||[];renderArchList();
   }).catch(()=>{$('#archList').innerHTML='<p class="note">Tidak bisa terhubung ke server.</p>';});
 }
+/* tombol berbahaya: ketuk dua kali dalam 3 detik */
+function armTap(btn,label,fn){
+  if(btn._arm&&Date.now()-btn._arm<3000){btn._arm=0;btn.textContent=label;fn();return;}
+  btn._arm=Date.now();btn.textContent='Yakin? Ketuk lagi untuk menghapus';
+  setTimeout(()=>{if(btn._arm&&Date.now()-btn._arm>=2900){btn._arm=0;btn.textContent=label;}},3000);
+}
+function archDel(op,after){
+  send(Object.assign({t:'archDel'},op)).then(r=>{
+    if(!r||r.err)return;
+    toast((r.archDeleted||0)+' partai dihapus dari arsip.');
+    $('#archList').innerHTML='<p class="note">Memuat arsip…</p>';$('#archView').hidden=true;$('#archList').hidden=false;
+    loadArch().then(after);
+  });
+}
 function renderArchList(){
-  $('#archList').innerHTML=ARCH.length?`<p class="note" style="margin-top:0">${ARCH.length} partai tersimpan. Ketuk untuk memutar ulang.</p><ul class="alist">`+ARCH.map((g,i)=>`<li><button data-a="${i}"><b>${esc(g.w)} vs ${esc(g.b)}<span class="ares">${esc(g.res)}</span></b><span>${esc(g.rd)} · ${esc(g.lb)} · ${esc(g.n)} langkah · ${esc(g.why)} · ${esc(fmtDate(g.at))}</span></button></li>`).join('')+'</ul>':'<p class="note">Belum ada notasi tersimpan. Notasi tersimpan otomatis setiap kali partai selesai.</p>';
+  const adm=isAdmin();$('#archAdm').hidden=!adm||!ARCH.length;$('#aAll').checked=false;
+  $('#archList').innerHTML=ARCH.length?`<p class="note" style="margin-top:0">${ARCH.length} partai tersimpan. Ketuk untuk memutar ulang.</p><ul class="alist">`+ARCH.map((g,i)=>`<li>${adm?`<input type="checkbox" data-sel="${esc(g.id)}" aria-label="Pilih partai ${esc(g.w)} vs ${esc(g.b)}">`:''}<button data-a="${i}"><b>${esc(g.w)} vs ${esc(g.b)}<span class="ares">${esc(g.res)}</span></b><span>${esc(g.rd)} · ${esc(g.lb)} · ${esc(g.n)} langkah · ${esc(g.why)} · ${esc(fmtDate(g.at))}</span></button></li>`).join('')+'</ul>':'<p class="note">Belum ada notasi tersimpan. Notasi tersimpan otomatis setiap kali partai selesai.</p>';
 }
 function openGame(i){
   const g=ARCH[i];if(!g)return;
   const{toks}=parsePGN(String(g.pgn||'')),r=sanToMoves(toks),d=derive(r.moves);
-  AG={g,d,idx:d.POS.length-1};
+  AG={g,d,idx:d.POS.length-1};$('#aDelOne').hidden=!isAdmin();
   $('#archList').hidden=true;$('#archView').hidden=false;$('#aNote').textContent='';
   $('#aHead').textContent=`${g.w} vs ${g.b} · ${g.res} · ${g.rd} · ${g.lb}`;
   renderGame();
